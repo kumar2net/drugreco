@@ -1,0 +1,569 @@
+[
+  {
+    "id": 1,
+    "name": "Paracetamol 500mg",
+    "category": "Pain Relief",
+    "combination": "Paracetamol",
+    "strength": "500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Sun Pharma",
+    "price": "35.00",
+    "sideEffects": [
+      "Nausea",
+      "Liver problems in high doses",
+      "Allergic reactions"
+    ],
+    "alternatives": [
+      "Dolo 650",
+      "Crocin",
+      "Calpol"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Dolo 650",
+    "category": "Pain Relief",
+    "combination": "Paracetamol",
+    "strength": "650mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Micro Labs",
+    "price": "42.00",
+    "sideEffects": [
+      "Nausea",
+      "Liver problems in high doses",
+      "Allergic reactions"
+    ],
+    "alternatives": [
+      "Paracetamol 500mg",
+      "Crocin",
+      "Calpol"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Azithromycin 500mg",
+    "category": "Antibiotics",
+    "combination": "Azithromycin",
+    "strength": "500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Cipla",
+    "price": "95.00",
+    "sideEffects": [
+      "Diarrhea",
+      "Nausea",
+      "Abdominal pain"
+    ],
+    "alternatives": [
+      "Zithromax",
+      "Zithral",
+      "Azee"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Metformin 500mg",
+    "category": "Diabetes",
+    "combination": "Metformin",
+    "strength": "500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "USV Ltd",
+    "price": "65.00",
+    "sideEffects": [
+      "Nausea",
+      "Diarrhea",
+      "Vitamin B12 deficiency"
+    ],
+    "alternatives": [
+      "Glycomet",
+      "Glucophage",
+      "Metlong"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Amlodipine 5mg",
+    "category": "Hypertension",
+    "combination": "Amlodipine",
+    "strength": "5mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "MSD",
+    "price": "78.00",
+    "sideEffects": [
+      "Swelling in ankles",
+      "Headache",
+      "Dizziness"
+    ],
+    "alternatives": [
+      "Amlong",
+      "Amlovas",
+      "Stamlo"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Omeprazole 20mg",
+    "category": "Gastrointestinal",
+    "combination": "Omeprazole",
+    "strength": "20mg",
+    "dosageForm": "Capsule",
+    "manufacturer": "Sun Pharma",
+    "price": "88.00",
+    "sideEffects": [
+      "Headache",
+      "Diarrhea",
+      "Abdominal pain"
+    ],
+    "alternatives": [
+      "Pantoprazole",
+      "Esomeprazole",
+      "Rabeprazole"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Cetirizine 10mg",
+    "category": "Antiallergic",
+    "combination": "Cetirizine",
+    "strength": "10mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "USV Ltd",
+    "price": "52.00",
+    "sideEffects": [
+      "Drowsiness",
+      "Dry mouth",
+      "Headache"
+    ],
+    "alternatives": [
+      "Levocet",
+      "Alerid",
+      "Zyrtec"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Atorvastatin 20mg",
+    "category": "Cardiovascular",
+    "combination": "Atorvastatin",
+    "strength": "20mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Cipla",
+    "price": "125.00",
+    "sideEffects": [
+      "Muscle pain",
+      "Liver problems",
+      "Digestive issues"
+    ],
+    "alternatives": [
+      "Lipitor",
+      "Atorva",
+      "Torvacard"
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Ibuprofen 400mg",
+    "category": "Pain Relief",
+    "combination": "Ibuprofen",
+    "strength": "400mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Cipla",
+    "price": "45.00",
+    "sideEffects": [
+      "Stomach pain",
+      "Heartburn",
+      "Dizziness"
+    ],
+    "alternatives": [
+      "Brufen",
+      "Advil",
+      "Nurofen"
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Diclofenac 50mg",
+    "category": "Pain Relief",
+    "combination": "Diclofenac",
+    "strength": "50mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Novartis",
+    "price": "48.00",
+    "sideEffects": [
+      "Stomach ulcers",
+      "Kidney problems",
+      "High blood pressure"
+    ],
+    "alternatives": [
+      "Voveran",
+      "Cataflam",
+      "Voltaren"
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Naproxen 500mg",
+    "category": "Pain Relief",
+    "combination": "Naproxen",
+    "strength": "500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Sun Pharma",
+    "price": "62.00",
+    "sideEffects": [
+      "Stomach pain",
+      "Heartburn",
+      "Drowsiness"
+    ],
+    "alternatives": [
+      "Naprosyn",
+      "Aleve",
+      "Anaprox"
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Aspirin 75mg",
+    "category": "Pain Relief",
+    "combination": "Aspirin",
+    "strength": "75mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Bayer",
+    "price": "28.00",
+    "sideEffects": [
+      "Stomach bleeding",
+      "Allergic reactions",
+      "Ringing in ears"
+    ],
+    "alternatives": [
+      "Ecosprin",
+      "Disprin",
+      "Aspilet"
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Tramadol 50mg",
+    "category": "Pain Relief",
+    "combination": "Tramadol",
+    "strength": "50mg",
+    "dosageForm": "Capsule",
+    "manufacturer": "Cipla",
+    "price": "72.00",
+    "sideEffects": [
+      "Dizziness",
+      "Nausea",
+      "Constipation"
+    ],
+    "alternatives": [
+      "Ultram",
+      "Tramal",
+      "Contramal"
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Amoxicillin 500mg",
+    "category": "Antibiotics",
+    "combination": "Amoxicillin",
+    "strength": "500mg",
+    "dosageForm": "Capsule",
+    "manufacturer": "Cipla",
+    "price": "82.00",
+    "sideEffects": [
+      "Diarrhea",
+      "Rash",
+      "Allergic reactions"
+    ],
+    "alternatives": [
+      "Novamox",
+      "Amoxil",
+      "Trimox"
+    ]
+  },
+  {
+    "id": 15,
+    "name": "Ciprofloxacin 500mg",
+    "category": "Antibiotics",
+    "combination": "Ciprofloxacin",
+    "strength": "500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Bayer",
+    "price": "105.00",
+    "sideEffects": [
+      "Tendon rupture",
+      "Nausea",
+      "Diarrhea"
+    ],
+    "alternatives": [
+      "Ciplox",
+      "Cipro",
+      "Ciprobay"
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Doxycycline 100mg",
+    "category": "Antibiotics",
+    "combination": "Doxycycline",
+    "strength": "100mg",
+    "dosageForm": "Capsule",
+    "manufacturer": "Pfizer",
+    "price": "92.00",
+    "sideEffects": [
+      "Photosensitivity",
+      "Nausea",
+      "Esophageal irritation"
+    ],
+    "alternatives": [
+      "Vibramycin",
+      "Doxy",
+      "Monodox"
+    ]
+  },
+  {
+    "id": 17,
+    "name": "Clarithromycin 500mg",
+    "category": "Antibiotics",
+    "combination": "Clarithromycin",
+    "strength": "500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Abbott",
+    "price": "115.00",
+    "sideEffects": [
+      "Diarrhea",
+      "Nausea",
+      "Abnormal taste"
+    ],
+    "alternatives": [
+      "Biaxin",
+      "Klaricid",
+      "Claribid"
+    ]
+  },
+  {
+    "id": 18,
+    "name": "Metronidazole 400mg",
+    "category": "Antibiotics",
+    "combination": "Metronidazole",
+    "strength": "400mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Sun Pharma",
+    "price": "75.00",
+    "sideEffects": [
+      "Metallic taste",
+      "Nausea",
+      "Dark urine"
+    ],
+    "alternatives": [
+      "Flagyl",
+      "Metrogyl",
+      "Nidazol"
+    ]
+  },
+  {
+    "id": 19,
+    "name": "Glimepiride 2mg",
+    "category": "Diabetes",
+    "combination": "Glimepiride",
+    "strength": "2mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Sanofi",
+    "price": "72.00",
+    "sideEffects": [
+      "Hypoglycemia",
+      "Weight gain",
+      "Nausea"
+    ],
+    "alternatives": [
+      "Amaryl",
+      "Glimepiride",
+      "Glimestar"
+    ]
+  },
+  {
+    "id": 20,
+    "name": "Sitagliptin 100mg",
+    "category": "Diabetes",
+    "combination": "Sitagliptin",
+    "strength": "100mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Merck",
+    "price": "165.00",
+    "sideEffects": [
+      "Upper respiratory infection",
+      "Headache",
+      "Joint pain"
+    ],
+    "alternatives": [
+      "Januvia",
+      "Xelevia",
+      "Istavel"
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Empagliflozin 25mg",
+    "category": "Diabetes",
+    "combination": "Empagliflozin",
+    "strength": "25mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Boehringer",
+    "price": "185.00",
+    "sideEffects": [
+      "UTI",
+      "Dehydration",
+      "Ketoacidosis"
+    ],
+    "alternatives": [
+      "Jardiance",
+      "Glyxambi",
+      "Synjardy"
+    ]
+  },
+  {
+    "id": 22,
+    "name": "Pioglitazone 15mg",
+    "category": "Diabetes",
+    "combination": "Pioglitazone",
+    "strength": "15mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Takeda",
+    "price": "98.00",
+    "sideEffects": [
+      "Weight gain",
+      "Edema",
+      "Fracture risk"
+    ],
+    "alternatives": [
+      "Actos",
+      "Pioz",
+      "Piozone"
+    ]
+  },
+  {
+    "id": 23,
+    "name": "Repaglinide 2mg",
+    "category": "Diabetes",
+    "combination": "Repaglinide",
+    "strength": "2mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Novo Nordisk",
+    "price": "95.00",
+    "sideEffects": [
+      "Hypoglycemia",
+      "Weight gain",
+      "Upper respiratory infections"
+    ],
+    "alternatives": [
+      "Prandin",
+      "Eurepa",
+      "Novonorm"
+    ]
+  },
+  {
+    "id": 24,
+    "name": "Startglim M2",
+    "category": "Diabetes",
+    "combination": "Glimepiride + Metformin",
+    "strength": "2mg + 500mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Lupin",
+    "price": "95.00",
+    "sideEffects": [
+      "Hypoglycemia",
+      "Nausea",
+      "Diarrhea",
+      "Weight gain",
+      "Headache"
+    ],
+    "alternatives": [
+      "Amaryl M",
+      "Glycomet GP",
+      "Glimisave M",
+      "Diaglim M"
+    ]
+  },
+  {
+    "id": 26,
+    "name": "Sacurise 100mg",
+    "category": "Cardiovascular",
+    "combination": "Sacubitril + Valsartan",
+    "strength": "100mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Novartis",
+    "price": "285.00",
+    "sideEffects": [
+      "Hypotension",
+      "Hyperkalemia",
+      "Cough",
+      "Dizziness"
+    ],
+    "alternatives": [
+      "Entresto",
+      "Vymada",
+      "Arni"
+    ]
+  },
+  {
+    "id": 27,
+    "name": "Dapa 10mg",
+    "category": "Diabetes",
+    "combination": "Dapagliflozin",
+    "strength": "10mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "AstraZeneca",
+    "price": "195.00",
+    "sideEffects": [
+      "UTI",
+      "Genital infections",
+      "Dehydration",
+      "Ketoacidosis"
+    ],
+    "alternatives": [
+      "Forxiga",
+      "Oxra",
+      "Dapanorm"
+    ]
+  },
+  {
+    "id": 28,
+    "name": "Lipikind CV 10mg",
+    "category": "Cardiovascular",
+    "combination": "Atorvastatin + Clopidogrel",
+    "strength": "10mg + 75mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Mankind",
+    "price": "145.00",
+    "sideEffects": [
+      "Bleeding risk",
+      "Muscle pain",
+      "Liver problems",
+      "Gastric irritation"
+    ],
+    "alternatives": [
+      "Ecosprin AV",
+      "Clopivas AP",
+      "Atorlip ASP"
+    ]
+  },
+  {
+    "id": 29,
+    "name": "Bisolong 2.5mg",
+    "category": "Hypertension",
+    "combination": "Bisoprolol",
+    "strength": "2.5mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Torrent",
+    "price": "58.00",
+    "sideEffects": [
+      "Fatigue",
+      "Dizziness",
+      "Cold hands/feet",
+      "Slow heart rate"
+    ],
+    "alternatives": [
+      "Concor",
+      "Bisoprolol",
+      "Corbis"
+    ]
+  }
+]

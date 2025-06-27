@@ -1,0 +1,22 @@
+{
+  "name": "drug-suggestion-app-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "netlify dev",
+    "build": "npm run build:server && npm run build:client",
+    "build:client": "npm install --prefix client && npm run build --prefix client",
+    "build:server": "npm install --prefix server"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "knex": "^3.1.0",
+    "pg": "^8.16.2",
+    "serverless-http": "^3.2.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.31.1"
+  }
+}
