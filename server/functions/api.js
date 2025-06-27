@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const serverless = require('serverless-http');
 const knex = require('knex');
+const { Client } = require('pg');
 require('dotenv').config();
 
 // Inline knex configuration for Netlify Functions

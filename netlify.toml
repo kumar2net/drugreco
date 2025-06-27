@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build && cd server/functions && npm install"
+  command = "npm run build"
   publish = "client/build"
   
 [functions]
