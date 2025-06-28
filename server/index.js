@@ -2,55 +2,109 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const knex = require('knex');
+const rateLimit = require('express-rate-limit');
+const slowDown = require('express-slow-down');
+const helmet = require('helmet');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const logger = require('./services/logger');
+const config = require('./config/environment');
 require('dotenv').config();
 
-// Knex configuration for Railway
-const knexConfig = {
-  development: {
-    client: 'pg',
-    connection: {
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 5432,
-      database: process.env.DB_NAME || 'drugreco_dev',
-      user: process.env.DB_USER || 'kumar',
-      password: process.env.DB_PASSWORD
-    }
-  },
-  production: {
-    client: 'pg',
-    connection: {
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    },
-    pool: {
-      min: 2,
-      max: 10
-    }
-  }
-};
-
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.get('PORT');
 
-// Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || ['http://localhost:3000', 'https://your-app.railway.app'],
-  credentials: true
-}));
+// Security middleware
+app.use(helmet());
+
+// Rate limiting configuration
+const limiter = rateLimit(config.getRateLimitConfig());
+const searchLimiter = rateLimit(config.getSearchRateLimitConfig());
+
+// Speed limiting for API endpoints
+const speedLimiter = slowDown({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  delayAfter: 50, // allow 50 requests per 15 minutes, then...
+  delayMs: 500 // begin adding 500ms of delay per request above 50
+});
+
+// Apply rate limiting if enabled
+if (config.get('ENABLE_RATE_LIMITING')) {
+  app.use('/api/', limiter);
+  app.use('/api/search', searchLimiter);
+  app.use('/api/', speedLimiter);
+}
+
+// CORS configuration
+app.use(cors(config.getCorsConfig()));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../client/build')));
 
-// Error logging utility
-function logError(error, context = '') {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] ${context}:`, {
-    message: error.message,
-    stack: error.stack,
-    ...(error.code && { code: error.code })
+// Request logging middleware
+if (config.get('ENABLE_LOGGING')) {
+  app.use((req, res, next) => {
+    const start = Date.now();
+    
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      logger.logRequest(req, res, duration);
+    });
+    
+    next();
   });
 }
+
+// JWT Authentication middleware
+const authenticateToken = (req, res, next) => {
+  if (!config.get('ENABLE_AUTHENTICATION')) {
+    return next();
+  }
+
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    logger.logSecurity('Missing authentication token', { url: req.url });
+    return res.status(401).json({ 
+      success: false, 
+      message: 'Access token required' 
+    });
+  }
+
+  jwt.verify(token, config.get('JWT_SECRET'), (err, user) => {
+    if (err) {
+      logger.logSecurity('Invalid authentication token', { url: req.url, error: err.message });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Invalid or expired token' 
+      });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Optional authentication for endpoints that can work with or without auth
+const optionalAuth = (req, res, next) => {
+  if (!config.get('ENABLE_AUTHENTICATION')) {
+    return next();
+  }
+
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token) {
+    jwt.verify(token, config.get('JWT_SECRET'), (err, user) => {
+      if (!err) {
+        req.user = user;
+      }
+      next();
+    });
+  } else {
+    next();
+  }
+};
 
 // Standardized response utility
 function createResponse(success, data = null, message = '', errors = null) {
@@ -65,7 +119,7 @@ function createResponse(success, data = null, message = '', errors = null) {
 
 // Global error handler middleware
 function errorHandler(err, req, res, next) {
-  logError(err, `${req.method} ${req.path}`);
+  logger.logError(err, `${req.method} ${req.path}`);
   
   if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
     return res.status(503).json(createResponse(false, null, 'Database connection error'));
@@ -73,6 +127,10 @@ function errorHandler(err, req, res, next) {
   
   if (err.name === 'ValidationError') {
     return res.status(400).json(createResponse(false, null, 'Validation error', err.errors));
+  }
+
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json(createResponse(false, null, 'CORS policy violation'));
   }
   
   res.status(500).json(createResponse(false, null, 'Internal server error'));
@@ -85,7 +143,8 @@ function validateSearchInput(req, res, next) {
   if (query) {
     const sanitizedQuery = query.replace(/[^\w\s-]/gi, '').trim().substring(0, 100);
     if (sanitizedQuery !== query) {
-      return res.status(400).json({ message: 'Invalid characters in search query' });
+      logger.logSecurity('Invalid search query', { original: query, sanitized: sanitizedQuery });
+      return res.status(400).json(createResponse(false, null, 'Invalid characters in search query'));
     }
     req.query.query = sanitizedQuery;
   }
@@ -93,7 +152,8 @@ function validateSearchInput(req, res, next) {
   if (category && category !== 'all') {
     const allowedCategories = ['Diabetes', 'Pain Relief', 'Antibiotics', 'Hypertension', 'Cardiovascular', 'Antiallergic', 'Gastrointestinal'];
     if (!allowedCategories.includes(category)) {
-      return res.status(400).json({ message: 'Invalid category parameter' });
+      logger.logSecurity('Invalid category parameter', { category });
+      return res.status(400).json(createResponse(false, null, 'Invalid category parameter'));
     }
   }
   
@@ -104,30 +164,119 @@ function validateSearchInput(req, res, next) {
 let db = null;
 function getDB() {
   if (!db) {
-    const environment = process.env.NODE_ENV || 'development';
+    const environment = config.get('NODE_ENV');
+    const knexConfig = config.getDatabaseConfig();
     db = knex(knexConfig[environment]);
+    logger.info('Database connection initialized', { environment });
   }
   return db;
 }
 
-// API Routes
-app.get('/api/drugs', async (req, res, next) => {
+// Authentication routes
+app.post('/api/auth/register', async (req, res, next) => {
   try {
-    const drugs = await getDB()('drugs').select('*');
-    const transformedDrugs = drugs.map(drug => ({
-      ...drug,
-      sideEffects: typeof drug.sideEffects === 'string' ? JSON.parse(drug.sideEffects) : drug.sideEffects,
-      alternatives: typeof drug.alternatives === 'string' ? JSON.parse(drug.alternatives) : drug.alternatives
-    }));
-    res.json(transformedDrugs);
+    const { username, email, password } = req.body;
+    
+    if (!username || !email || !password) {
+      return res.status(400).json(createResponse(false, null, 'Username, email, and password are required'));
+    }
+    
+    if (password.length < config.get('PASSWORD_MIN_LENGTH')) {
+      return res.status(400).json(createResponse(false, null, `Password must be at least ${config.get('PASSWORD_MIN_LENGTH')} characters long`));
+    }
+    
+    // Check if user already exists
+    const existingUser = await getDB()('users').where({ email }).first();
+    if (existingUser) {
+      logger.logAuthentication('register', null, false);
+      return res.status(409).json(createResponse(false, null, 'User already exists'));
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, config.get('BCRYPT_ROUNDS'));
+    
+    // Create user
+    const [userId] = await getDB()('users').insert({
+      username,
+      email,
+      password: hashedPassword,
+      created_at: new Date()
+    }).returning('id');
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId, username, email },
+      config.get('JWT_SECRET'),
+      { expiresIn: config.get('JWT_EXPIRES_IN') }
+    );
+    
+    logger.logAuthentication('register', userId, true);
+    res.status(201).json(createResponse(true, { token, user: { id: userId, username, email } }, 'User registered successfully'));
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/api/search', validateSearchInput, async (req, res, next) => {
+app.post('/api/auth/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json(createResponse(false, null, 'Email and password are required'));
+    }
+    
+    // Find user
+    const user = await getDB()('users').where({ email }).first();
+    if (!user) {
+      logger.logAuthentication('login', null, false);
+      return res.status(401).json(createResponse(false, null, 'Invalid credentials'));
+    }
+    
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      logger.logAuthentication('login', user.id, false);
+      return res.status(401).json(createResponse(false, null, 'Invalid credentials'));
+    }
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, username: user.username, email: user.email },
+      config.get('JWT_SECRET'),
+      { expiresIn: config.get('JWT_EXPIRES_IN') }
+    );
+    
+    logger.logAuthentication('login', user.id, true);
+    res.json(createResponse(true, { token, user: { id: user.id, username: user.username, email: user.email } }, 'Login successful'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// API Routes with optional authentication
+app.get('/api/drugs', optionalAuth, async (req, res, next) => {
+  try {
+    const startTime = Date.now();
+    const drugs = await getDB()('drugs').select('*');
+    const duration = Date.now() - startTime;
+    
+    logger.logPerformance('get_drugs', duration, { count: drugs.length });
+    
+    const transformedDrugs = drugs.map(drug => ({
+      ...drug,
+      sideEffects: typeof drug.sideEffects === 'string' ? JSON.parse(drug.sideEffects) : drug.sideEffects,
+      alternatives: typeof drug.alternatives === 'string' ? JSON.parse(drug.alternatives) : drug.alternatives
+    }));
+    res.json(createResponse(true, transformedDrugs, 'Drugs retrieved successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/api/search', validateSearchInput, optionalAuth, async (req, res, next) => {
   const { query, category } = req.query;
   try {
+    const startTime = Date.now();
     let dbQuery = getDB()('drugs');
     if (category && category !== 'all') {
       dbQuery = dbQuery.where({ category });
@@ -136,65 +285,104 @@ app.get('/api/search', validateSearchInput, async (req, res, next) => {
       dbQuery = dbQuery.where('name', 'ilike', `%${query}%`);
     }
     const drugs = await dbQuery.select('*');
+    const duration = Date.now() - startTime;
+    
+    logger.logPerformance('search_drugs', duration, { query, category, count: drugs.length });
+    
     const transformedDrugs = drugs.map(drug => ({
       ...drug,
       sideEffects: typeof drug.sideEffects === 'string' ? JSON.parse(drug.sideEffects) : drug.sideEffects,
       alternatives: typeof drug.alternatives === 'string' ? JSON.parse(drug.alternatives) : drug.alternatives
     }));
-    res.json(transformedDrugs);
+    res.json(createResponse(true, transformedDrugs, 'Search completed successfully'));
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/api/categories', async (req, res, next) => {
+app.get('/api/categories', optionalAuth, async (req, res, next) => {
   try {
+    const startTime = Date.now();
     const categories = await getDB()('drugs').distinct('category').orderBy('category');
-    res.json(['all', ...categories.map(c => c.category)]);
+    const duration = Date.now() - startTime;
+    
+    logger.logPerformance('get_categories', duration, { count: categories.length });
+    
+    res.json(createResponse(true, ['all', ...categories.map(c => c.category)], 'Categories retrieved successfully'));
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/api/trending', async (req, res, next) => {
+app.get('/api/trending', optionalAuth, async (req, res, next) => {
   try {
+    const startTime = Date.now();
     const trending = await getDB()('drugs').orderBy('price', 'desc').limit(5);
-    res.json(trending.map(drug => ({
+    const duration = Date.now() - startTime;
+    
+    logger.logPerformance('get_trending', duration, { count: trending.length });
+    
+    const transformedTrending = trending.map(drug => ({
       ...drug,
       sideEffects: typeof drug.sideEffects === 'string' ? JSON.parse(drug.sideEffects) : drug.sideEffects,
       alternatives: typeof drug.alternatives === 'string' ? JSON.parse(drug.alternatives) : drug.alternatives
-    })));
+    }));
+    res.json(createResponse(true, transformedTrending, 'Trending drugs retrieved successfully'));
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/api/stats', async (req, res, next) => {
+app.get('/api/stats', optionalAuth, async (req, res, next) => {
   try {
+    const startTime = Date.now();
     const stats = await getDB()('drugs')
       .select('category')
       .count('* as count')
       .avg('price as avgPrice')
       .groupBy('category');
-    res.json(stats);
+    const duration = Date.now() - startTime;
+    
+    logger.logPerformance('get_stats', duration, { count: stats.length });
+    
+    res.json(createResponse(true, stats, 'Statistics retrieved successfully'));
   } catch (err) {
     next(err);
   }
 });
 
-app.post('/api/drugs/by-names', async (req, res, next) => {
+app.post('/api/drugs/by-names', optionalAuth, async (req, res, next) => {
   const { names } = req.body;
   if (!names || !Array.isArray(names)) {
-    return res.status(400).json({ message: '`names` must be an array of drug names.' });
+    return res.status(400).json(createResponse(false, null, '`names` must be an array of drug names.'));
   }
 
   try {
+    const startTime = Date.now();
     const drugs = await getDB()('drugs').whereIn('name', names);
-    res.json(drugs.map(drug => ({
+    const duration = Date.now() - startTime;
+    
+    logger.logPerformance('get_drugs_by_names', duration, { names: names.length, found: drugs.length });
+    
+    const transformedDrugs = drugs.map(drug => ({
       ...drug,
       sideEffects: typeof drug.sideEffects === 'string' ? JSON.parse(drug.sideEffects) : drug.sideEffects,
       alternatives: typeof drug.alternatives === 'string' ? JSON.parse(drug.alternatives) : drug.alternatives
-    })));
+    }));
+    res.json(createResponse(true, transformedDrugs, 'Drugs retrieved successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Protected routes (require authentication)
+app.get('/api/user/profile', authenticateToken, async (req, res, next) => {
+  try {
+    const user = await getDB()('users').where({ id: req.user.userId }).select('id', 'username', 'email', 'created_at').first();
+    if (!user) {
+      return res.status(404).json(createResponse(false, null, 'User not found'));
+    }
+    res.json(createResponse(true, user, 'Profile retrieved successfully'));
   } catch (err) {
     next(err);
   }
@@ -210,8 +398,8 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚂 Railway server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`🚂 Railway server running on port ${PORT}`);
+  logger.info(`Environment: ${config.get('NODE_ENV')}`);
 });
 
 module.exports = app; 

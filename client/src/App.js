@@ -131,9 +131,9 @@ function App() {
           apiService.getCategoryStats(),
           apiService.getCategories()
         ]);
-        setTrendingDrugs(trending);
-        setCategoryStats(stats);
-        setCategories(cats);
+        setTrendingDrugs(trending.data || trending);
+        setCategoryStats(stats.data || stats);
+        setCategories(cats.data || cats);
       } catch (error) {
         console.error('Error loading initial data:', error);
       }
@@ -149,7 +149,7 @@ function App() {
         const results = await apiService.searchDrugs({
           category: selectedCategory,
         });
-        setSearchResults(results);
+        setSearchResults(results.data || results);
       } catch (error) {
         console.error('Error loading category drugs:', error);
       } finally {
@@ -168,7 +168,7 @@ function App() {
         query: searchQuery,
         category: selectedCategory,
       });
-      setSearchResults(results);
+      setSearchResults(results.data || results);
       setLastSearch(searchQuery);
     } catch (error) {
       console.error('Error searching drugs:', error);
@@ -182,7 +182,8 @@ function App() {
     try {
       let alternativesWithDetails = [];
       if (drug.alternatives && drug.alternatives.length > 0) {
-        alternativesWithDetails = await apiService.getDrugsByNames(drug.alternatives);
+        const altResults = await apiService.getDrugsByNames(drug.alternatives);
+        alternativesWithDetails = altResults.data || altResults;
       }
 
       setSelectedDrugDetails({
