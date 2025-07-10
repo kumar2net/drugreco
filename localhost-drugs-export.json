@@ -625,5 +625,46 @@
       "Losakind 50",
       "Repace 50"
     ]
+  },
+  {
+    "id": 33,
+    "name": "Zolfresh 5mg",
+    "category": "Sleep Aid",
+    "combination": "Zolpidem",
+    "strength": "5mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Abbott",
+    "price": "82.00",
+    "sideEffects": [
+      "Drowsiness",
+      "Headache",
+      "Dizziness",
+      "Nausea"
+    ],
+    "alternatives": [
+      "Ambien",
+      "Hypnite 5mg",
+      "Stilnoct"
+    ]
+  },
+  {
+    "id": 34,
+    "name": "Meloset 3mg",
+    "category": "Sleep Aid",
+    "combination": "Melatonin",
+    "strength": "3mg",
+    "dosageForm": "Tablet",
+    "manufacturer": "Aristo Pharma",
+    "price": "60.00",
+    "sideEffects": [
+      "Drowsiness",
+      "Headache",
+      "Nausea"
+    ],
+    "alternatives": [
+      "Sleepwell 3mg",
+      "Restfine 3mg",
+      "Melatonin 3mg"
+    ]
   }
 ]
