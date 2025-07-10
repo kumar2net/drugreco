@@ -1,6 +1,7 @@
 import cacheService from './cacheService';
 
-const API_URL = '/api';
+// Allow overriding API base URL via environment variables
+const API_URL = process.env.REACT_APP_API_URL || '/api';
 
 class ApiService {
   constructor() {

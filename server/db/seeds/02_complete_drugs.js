@@ -2,9 +2,16 @@ const fs = require('fs');
 const path = require('path');
 
 exports.seed = async function(knex) {
-  // Read the exported drugs from localhost
-  const drugsPath = path.join(__dirname, '../../../localhost-drugs-export.json');
-  const localDrugs = JSON.parse(fs.readFileSync(drugsPath, 'utf8'));
+  // Determine the JSON file path for drug seed data.
+  // Allows overriding via environment variable `DRUGS_SEED_FILE` to support different deployment setups.
+  const defaultPath = path.join(__dirname, '../../../localhost-drugs-export.json');
+  const drugsFilePath = process.env.DRUGS_SEED_FILE ? path.resolve(process.env.DRUGS_SEED_FILE) : defaultPath;
+
+  if (!fs.existsSync(drugsFilePath)) {
+    throw new Error(`Drug seed file not found at path: ${drugsFilePath}`);
+  }
+
+  const localDrugs = JSON.parse(fs.readFileSync(drugsFilePath, 'utf8'));
   
   // Clear existing entries
   await knex('drugs').del();

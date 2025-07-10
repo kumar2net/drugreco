@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -9,7 +11,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const logger = require('./services/logger');
 const config = require('./config/environment');
-require('dotenv').config();
 
 const app = express();
 const PORT = config.get('PORT');

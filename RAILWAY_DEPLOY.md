@@ -57,6 +57,33 @@ Railway will automatically provide:
 CLIENT_URL=https://your-app.railway.app
 ```
 
+### Updated & New Environment Variables
+
+| Variable | Required | Example / Default | Purpose |
+|----------|----------|-------------------|---------|
+| `NODE_ENV` | ✅ | `production` | Explicitly tell the server it is running in production mode |
+| `PORT` | 🚂 Auto | _Provided by Railway_ | Port that Express must bind to |
+| `DATABASE_URL` | 🚂 Auto | _Provided by Railway_ | PostgreSQL connection string |
+| `JWT_SECRET` | ✅ | `p@ssw0rd-change-me` | Secret used to sign auth tokens |
+| `CLIENT_URL` | ✅ | `https://drugreco-production.up.railway.app` | Allowed CORS origin & where React is hosted |
+| `REACT_APP_API_URL` | ✅ (build-time) | `https://drugreco-production.up.railway.app/api` | Injected at `npm build --prefix client`; overrides default relative `/api` path |
+| `LOG_LEVEL` | ⬜ | `INFO` | Log verboseness (`ERROR`,`WARN`,`INFO`,`DEBUG`) |
+| `DRUGS_SEED_FILE` | ⬜ | `./localhost-drugs-export.json` | Path to JSON file used by seed script |
+
+> **Heads-up**: Values like `JWT_SECRET` should be created as _Railway Variables_ and **never committed** to Git.
+
+### Automatic DB Migration & Seeding
+
+The `railway.json` `startCommand` now runs:
+
+```bash
+npm run db:migrate && npm run db:seed && npm run start:prod
+```
+
+This guarantees that every deploy applies pending migrations and (re)seeds the database before the web server starts—preventing the blank-search issue caused by an empty table.
+
+---
+
 ### Step 5: Custom Domain (Optional)
 
 1. Go to your Railway project
