@@ -600,6 +600,11 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Disclaimer Footer */}
+      <footer className="footer-disclaimer">
+        Disclaimer: This application is for informational purposes only and does not constitute medical advice. Please consult a qualified medical professional before taking any medicine or drugs.
+      </footer>
     </div>
   );
 }
