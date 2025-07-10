@@ -55,7 +55,9 @@ class EnvironmentConfig {
       ENABLE_AUTHENTICATION: process.env.ENABLE_AUTHENTICATION !== 'false',
       ENABLE_RATE_LIMITING: process.env.ENABLE_RATE_LIMITING !== 'false',
       ENABLE_LOGGING: process.env.ENABLE_LOGGING !== 'false',
-      ENABLE_CACHING: process.env.ENABLE_CACHING !== 'false'
+      ENABLE_CACHING: process.env.ENABLE_CACHING !== 'false',
+      // YOLO mode - disables certain safeguards for experimental testing
+      YOLO_MODE: process.env.YOLO_MODE !== 'false'
     };
   }
 
@@ -120,7 +122,8 @@ class EnvironmentConfig {
       DB_NAME: this.config.DB_NAME,
       ENABLE_AUTHENTICATION: this.config.ENABLE_AUTHENTICATION,
       ENABLE_RATE_LIMITING: this.config.ENABLE_RATE_LIMITING,
-      LOG_LEVEL: this.config.LOG_LEVEL
+      LOG_LEVEL: this.config.LOG_LEVEL,
+      YOLO_MODE: this.config.YOLO_MODE
     });
   }
 
