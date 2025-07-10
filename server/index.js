@@ -176,17 +176,23 @@ function getDB() {
 // Ensure the drugs table is populated in production
 async function ensureDrugsSeeded() {
   try {
+    // Load JSON to know expected total
+    const path = require('path');
+    const fs = require('fs');
+    const defaultPath = path.join(__dirname, '../../localhost-drugs-export.json');
+    const drugsJson = JSON.parse(fs.readFileSync(defaultPath, 'utf8'));
+    const expectedCount = drugsJson.length;
+
     const result = await getDB()('drugs').count({ count: 'id' }).first();
     const currentCount = parseInt(result.count ?? result.id ?? 0, 10);
 
-    if (currentCount === 0) {
-      logger.info('Drugs table is empty – running initial seed');
-      // Dynamically import the seed script
+    if (currentCount !== expectedCount) {
+      logger.info(`Drugs table count (${currentCount}) does not match JSON (${expectedCount}) – reseeding`);
       const seedScript = require('./db/seeds/02_complete_drugs');
       await seedScript.seed(getDB());
-      logger.info('✅ Drug seed completed successfully');
+      logger.info('✅ Drug reseed completed successfully');
     } else {
-      logger.info(`Drugs table already populated with ${currentCount} records – skipping seed`);
+      logger.info(`Drugs table already in sync with ${currentCount} records – no reseed needed`);
     }
   } catch (err) {
     logger.logError(err, 'ensureDrugsSeeded');
