@@ -150,7 +150,7 @@ function validateSearchInput(req, res, next) {
   }
   
   if (category && category !== 'all') {
-    const allowedCategories = ['Diabetes', 'Pain Relief', 'Antibiotics', 'Hypertension', 'Cardiovascular', 'Antiallergic', 'Gastrointestinal'];
+    const allowedCategories = ['Diabetes', 'Pain Relief', 'Antibiotics', 'Hypertension', 'Cardiovascular', 'Antiallergic', 'Gastrointestinal', 'Supplements', 'Thyroid', 'Sleep Aid'];
     if (!allowedCategories.includes(category)) {
       logger.logSecurity('Invalid category parameter', { category });
       return res.status(400).json(createResponse(false, null, 'Invalid category parameter'));
