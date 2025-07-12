@@ -410,6 +410,9 @@ app.get('*', (req, res) => {
 // Apply error handler
 app.use(errorHandler);
 
+// Debug log for PORT
+logger.info(`PORT from config: ${PORT}, process.env.PORT: ${process.env.PORT}`);
+
 // Start server
 app.listen(PORT, () => {
   logger.info(`🚂 Railway server running on port ${PORT}`);
