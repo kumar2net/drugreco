@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const knex = require('knex');
+const prisma = require('./lib/prisma');
 const rateLimit = require('express-rate-limit');
 const slowDown = require('express-slow-down');
 const helmet = require('helmet');
@@ -26,7 +26,7 @@ const searchLimiter = rateLimit(config.getSearchRateLimitConfig());
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutes
   delayAfter: 50, // allow 50 requests per 15 minutes, then...
-  delayMs: 500 // begin adding 500ms of delay per request above 50
+  delayMs: () => 500 // begin adding 500ms of delay uniformly for each request after delayAfter
 });
 
 // Apply rate limiting if enabled
@@ -161,46 +161,10 @@ function validateSearchInput(req, res, next) {
   next();
 }
 
-// Database initialization
-let db = null;
-function getDB() {
-  if (!db) {
-    const environment = config.get('NODE_ENV');
-    const knexConfig = config.getDatabaseConfig();
-    db = knex(knexConfig[environment]);
-    logger.info('Database connection initialized', { environment });
-  }
-  return db;
-}
+// Prisma client is initialized in lib/prisma.js and reused across the app
 
-// Ensure the drugs table is populated in production
-async function ensureDrugsSeeded() {
-  try {
-    // Load JSON to know expected total
-    const path = require('path');
-    const fs = require('fs');
-    const defaultPath = path.join(__dirname, '../../localhost-drugs-export.json');
-    const drugsJson = JSON.parse(fs.readFileSync(defaultPath, 'utf8'));
-    const expectedCount = drugsJson.length;
-
-    const result = await getDB()('drugs').count({ count: 'id' }).first();
-    const currentCount = parseInt(result.count ?? result.id ?? 0, 10);
-
-    if (currentCount !== expectedCount) {
-      logger.info(`Drugs table count (${currentCount}) does not match JSON (${expectedCount}) – reseeding`);
-      const seedScript = require('./db/seeds/02_complete_drugs');
-      await seedScript.seed(getDB());
-      logger.info('✅ Drug reseed completed successfully');
-    } else {
-      logger.info(`Drugs table already in sync with ${currentCount} records – no reseed needed`);
-    }
-  } catch (err) {
-    logger.logError(err, 'ensureDrugsSeeded');
-  }
-}
-
-// Trigger the seed check (fire-and-forget)
-ensureDrugsSeeded();
+// NOTE: The previous Knex-based seed check has been removed.
+// If you need to seed the database, create a Prisma-based seed script instead.
 
 // Authentication routes
 app.post('/api/auth/register', async (req, res, next) => {
@@ -216,7 +180,7 @@ app.post('/api/auth/register', async (req, res, next) => {
     }
     
     // Check if user already exists
-    const existingUser = await getDB()('users').where({ email }).first();
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       logger.logAuthentication('register', null, false);
       return res.status(409).json(createResponse(false, null, 'User already exists'));
@@ -226,12 +190,16 @@ app.post('/api/auth/register', async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, config.get('BCRYPT_ROUNDS'));
     
     // Create user
-    const [userId] = await getDB()('users').insert({
-      username,
-      email,
-      password: hashedPassword,
-      created_at: new Date()
-    }).returning('id');
+    const createdUser = await prisma.user.create({
+      data: {
+        username,
+        email,
+        password: hashedPassword,
+        created_at: new Date()
+      },
+      select: { id: true }
+    });
+    const userId = createdUser.id;
     
     // Generate JWT token
     const token = jwt.sign(
@@ -256,7 +224,7 @@ app.post('/api/auth/login', async (req, res, next) => {
     }
     
     // Find user
-    const user = await getDB()('users').where({ email }).first();
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       logger.logAuthentication('login', null, false);
       return res.status(401).json(createResponse(false, null, 'Invalid credentials'));
@@ -287,7 +255,7 @@ app.post('/api/auth/login', async (req, res, next) => {
 app.get('/api/drugs', optionalAuth, async (req, res, next) => {
   try {
     const startTime = Date.now();
-    const drugs = await getDB()('drugs').select('*');
+    const drugs = await prisma.drug.findMany();
     const duration = Date.now() - startTime;
     
     logger.logPerformance('get_drugs', duration, { count: drugs.length });
@@ -307,14 +275,14 @@ app.get('/api/search', validateSearchInput, optionalAuth, async (req, res, next)
   const { query, category } = req.query;
   try {
     const startTime = Date.now();
-    let dbQuery = getDB()('drugs');
+    const where = {};
     if (category && category !== 'all') {
-      dbQuery = dbQuery.where({ category });
+      where.category = category;
     }
     if (query) {
-      dbQuery = dbQuery.where('name', 'ilike', `%${query}%`);
+      where.name = { contains: query, mode: 'insensitive' };
     }
-    const drugs = await dbQuery.select('*');
+    const drugs = await prisma.drug.findMany({ where });
     const duration = Date.now() - startTime;
     
     logger.logPerformance('search_drugs', duration, { query, category, count: drugs.length });
@@ -333,7 +301,10 @@ app.get('/api/search', validateSearchInput, optionalAuth, async (req, res, next)
 app.get('/api/categories', optionalAuth, async (req, res, next) => {
   try {
     const startTime = Date.now();
-    const categories = await getDB()('drugs').distinct('category').orderBy('category');
+    const categories = await prisma.drug.findMany({
+      select: { category: true },
+      distinct: ['category']
+    });
     const duration = Date.now() - startTime;
     
     logger.logPerformance('get_categories', duration, { count: categories.length });
@@ -347,7 +318,10 @@ app.get('/api/categories', optionalAuth, async (req, res, next) => {
 app.get('/api/trending', optionalAuth, async (req, res, next) => {
   try {
     const startTime = Date.now();
-    const trending = await getDB()('drugs').orderBy('price', 'desc').limit(5);
+    const trending = await prisma.drug.findMany({
+      orderBy: { price: 'desc' },
+      take: 5
+    });
     const duration = Date.now() - startTime;
     
     logger.logPerformance('get_trending', duration, { count: trending.length });
@@ -366,11 +340,12 @@ app.get('/api/trending', optionalAuth, async (req, res, next) => {
 app.get('/api/stats', optionalAuth, async (req, res, next) => {
   try {
     const startTime = Date.now();
-    const stats = await getDB()('drugs')
-      .select('category')
-      .count('* as count')
-      .avg('price as avgPrice')
-      .groupBy('category');
+    const stats = await prisma.drug
+      .groupBy({
+        by: ['category'],
+        _count: { _all: true },
+        _avg: { price: true }
+      });
     const duration = Date.now() - startTime;
     
     logger.logPerformance('get_stats', duration, { count: stats.length });
@@ -389,7 +364,13 @@ app.post('/api/drugs/by-names', optionalAuth, async (req, res, next) => {
 
   try {
     const startTime = Date.now();
-    const drugs = await getDB()('drugs').whereIn('name', names);
+    const drugs = await prisma.drug.findMany({
+      where: {
+        name: {
+          in: names
+        }
+      }
+    });
     const duration = Date.now() - startTime;
     
     logger.logPerformance('get_drugs_by_names', duration, { names: names.length, found: drugs.length });
@@ -408,7 +389,10 @@ app.post('/api/drugs/by-names', optionalAuth, async (req, res, next) => {
 // Protected routes (require authentication)
 app.get('/api/user/profile', authenticateToken, async (req, res, next) => {
   try {
-    const user = await getDB()('users').where({ id: req.user.userId }).select('id', 'username', 'email', 'created_at').first();
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { id: true, username: true, email: true, created_at: true }
+    });
     if (!user) {
       return res.status(404).json(createResponse(false, null, 'User not found'));
     }

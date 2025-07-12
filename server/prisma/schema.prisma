@@ -6,10 +6,35 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Drug {
+  id           Int      @id @default(autoincrement())
+  name         String
+  category     String
+  combination  String?
+  strength     String?
+  dosageForm   String?
+  manufacturer String?
+  price        Decimal?  @db.Decimal(10,2)
+  sideEffects  Json?
+  alternatives Json?
+
+  @@map("drugs")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  username   String
+  email      String    @unique
+  password   String
+  created_at DateTime? @default(now())
+  updated_at DateTime? @updatedAt
+
+  @@map("users")
 }

@@ -24,7 +24,8 @@ function AgentProvider({ children }) {
   const getSmartSuggestions = (currentSearch, searchResults) => {
     const searchHistory = preferences.searchHistory;
     const favoriteDrugs = preferences.favoriteDrugs;
-    
+    const safeResults = Array.isArray(searchResults) ? searchResults : [];
+
     // Get frequently searched drugs
     const frequentSearches = searchHistory.reduce((acc, search) => {
       acc[search] = (acc[search] || 0) + 1;
@@ -32,7 +33,7 @@ function AgentProvider({ children }) {
     }, {});
 
     // Get related drugs based on category and manufacturer preferences
-    const relatedDrugs = searchResults.filter(drug => 
+    const relatedDrugs = safeResults.filter(drug => 
       preferences.userPreferences.preferredCategories.includes(drug.category) ||
       preferences.userPreferences.preferredManufacturers.includes(drug.manufacturer)
     );
@@ -133,7 +134,7 @@ function App() {
         ]);
         setTrendingDrugs(trending.data || trending);
         setCategoryStats(stats.data || stats);
-        setCategories(cats.data || cats);
+        setCategories(Array.isArray(cats.data) ? cats.data : Array.isArray(cats) ? cats : ['all']);
       } catch (error) {
         console.error('Error loading initial data:', error);
       }
@@ -351,7 +352,7 @@ function App() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="category-select"
             >
-              {categories && categories.map(category => (
+              {Array.isArray(categories) && categories.map(category => (
                 <option key={category} value={category}>
                   {category === 'all' ? 'All Categories' : category}
                 </option>
