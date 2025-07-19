@@ -403,6 +403,369 @@ app.get('/api/user/profile', authenticateToken, async (req, res, next) => {
   }
 });
 
+// Family Members API endpoints
+app.get('/api/family-members', async (req, res, next) => {
+  try {
+    const members = await prisma.familyMember.findMany({
+      where: { isActive: true },
+      include: {
+        medications: {
+          where: { isActive: true },
+          include: { drug: true }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+    
+    logger.logSearch('family-members', null, members.length);
+    res.json(createResponse(true, members, 'Family members retrieved successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/family-members', async (req, res, next) => {
+  try {
+    const { name, age, photo, allergies, conditions, emergencyContact, emergencyPhone, role } = req.body;
+    
+    if (!name) {
+      return res.status(400).json(createResponse(false, null, 'Name is required'));
+    }
+    
+    const member = await prisma.familyMember.create({
+      data: {
+        name,
+        age: age ? parseInt(age) : null,
+        photo,
+        allergies: allergies ? JSON.stringify(allergies) : null,
+        conditions: conditions ? JSON.stringify(conditions) : null,
+        emergencyContact,
+        emergencyPhone,
+        role: role || 'member'
+      }
+    });
+    
+    res.status(201).json(createResponse(true, member, 'Family member created successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.put('/api/family-members/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, age, photo, allergies, conditions, emergencyContact, emergencyPhone, role } = req.body;
+    
+    const member = await prisma.familyMember.update({
+      where: { id: parseInt(id) },
+      data: {
+        name,
+        age: age ? parseInt(age) : null,
+        photo,
+        allergies: allergies ? JSON.stringify(allergies) : null,
+        conditions: conditions ? JSON.stringify(conditions) : null,
+        emergencyContact,
+        emergencyPhone,
+        role
+      }
+    });
+    
+    res.json(createResponse(true, member, 'Family member updated successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/family-members/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.familyMember.update({
+      where: { id: parseInt(id) },
+      data: { isActive: false }
+    });
+    
+    res.json(createResponse(true, null, 'Family member deleted successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Family Medications API endpoints
+app.get('/api/family-medications/:memberId', async (req, res, next) => {
+  try {
+    const { memberId } = req.params;
+    
+    const medications = await prisma.familyMedication.findMany({
+      where: { 
+        familyMemberId: parseInt(memberId),
+        isActive: true 
+      },
+      include: { drug: true },
+      orderBy: { created_at: 'desc' }
+    });
+    
+    res.json(createResponse(true, medications, 'Medications retrieved successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/api/family-medications', async (req, res, next) => {
+  try {
+    const { familyMemberId, drugId, dosage, frequency, notes, cost } = req.body;
+    
+    if (!familyMemberId || !drugId) {
+      return res.status(400).json(createResponse(false, null, 'Family member ID and drug ID are required'));
+    }
+    
+    const medication = await prisma.familyMedication.create({
+      data: {
+        familyMemberId: parseInt(familyMemberId),
+        drugId: parseInt(drugId),
+        dosage,
+        frequency,
+        notes,
+        cost: cost ? parseFloat(cost) : null
+      },
+      include: { drug: true }
+    });
+    
+    res.status(201).json(createResponse(true, medication, 'Medication added successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.put('/api/family-medications/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { dosage, frequency, notes, cost, isActive } = req.body;
+    
+    const medication = await prisma.familyMedication.update({
+      where: { id: parseInt(id) },
+      data: {
+        dosage,
+        frequency,
+        notes,
+        cost: cost ? parseFloat(cost) : null,
+        isActive
+      },
+      include: { drug: true }
+    });
+    
+    res.json(createResponse(true, medication, 'Medication updated successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/family-medications/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.familyMedication.update({
+      where: { id: parseInt(id) },
+      data: { isActive: false }
+    });
+    
+    res.json(createResponse(true, null, 'Medication removed successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Drug interaction checking endpoint
+app.post('/api/interactions/check', async (req, res, next) => {
+  try {
+    const { drugIds, memberId } = req.body;
+    
+    if (!drugIds || !Array.isArray(drugIds) || drugIds.length === 0) {
+      return res.status(400).json(createResponse(false, null, 'Drug IDs array is required'));
+    }
+    
+    // Get drug details
+    const drugs = await prisma.drug.findMany({
+      where: { id: { in: drugIds.map(id => parseInt(id)) } }
+    });
+    
+    // Basic interaction checking logic (simplified for MVP)
+    const interactions = [];
+    const highRiskCombinations = [
+      ['Aspirin', 'Ibuprofen'],
+      ['Metformin', 'Alcohol'],
+      ['Amlodipine', 'Simvastatin']
+    ];
+    
+    for (let i = 0; i < drugs.length; i++) {
+      for (let j = i + 1; j < drugs.length; j++) {
+        const drug1 = drugs[i];
+        const drug2 = drugs[j];
+        
+        // Check for known interactions
+        const hasInteraction = highRiskCombinations.some(combo => 
+          (drug1.name.includes(combo[0]) && drug2.name.includes(combo[1])) ||
+          (drug1.name.includes(combo[1]) && drug2.name.includes(combo[0]))
+        );
+        
+        if (hasInteraction) {
+          interactions.push({
+            severity: 'high',
+            drug1: drug1.name,
+            drug2: drug2.name,
+            description: `Potential interaction between ${drug1.name} and ${drug2.name}`,
+            recommendation: 'Consult healthcare provider before combining these medications'
+          });
+        }
+      }
+    }
+    
+    res.json(createResponse(true, { interactions, drugCount: drugs.length }, 'Interaction check completed'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Family-wide interaction check
+app.post('/api/interactions/family-check', async (req, res, next) => {
+  try {
+    // Get all active medications for all family members
+    const allMedications = await prisma.familyMedication.findMany({
+      where: { isActive: true },
+      include: { 
+        drug: true,
+        familyMember: true
+      }
+    });
+    
+    const drugIds = allMedications.map(med => med.drugId);
+    const uniqueDrugIds = [...new Set(drugIds)];
+    
+    // Check interactions across all family medications
+    const drugs = await prisma.drug.findMany({
+      where: { id: { in: uniqueDrugIds } }
+    });
+    
+    const interactions = [];
+    const highRiskCombinations = [
+      ['Aspirin', 'Ibuprofen'],
+      ['Metformin', 'Alcohol'],
+      ['Amlodipine', 'Simvastatin']
+    ];
+    
+    for (let i = 0; i < drugs.length; i++) {
+      for (let j = i + 1; j < drugs.length; j++) {
+        const drug1 = drugs[i];
+        const drug2 = drugs[j];
+        
+        const hasInteraction = highRiskCombinations.some(combo => 
+          (drug1.name.includes(combo[0]) && drug2.name.includes(combo[1])) ||
+          (drug1.name.includes(combo[1]) && drug2.name.includes(combo[0]))
+        );
+        
+        if (hasInteraction) {
+          // Find which family members are taking these drugs
+          const members1 = allMedications.filter(med => med.drugId === drug1.id).map(med => med.familyMember.name);
+          const members2 = allMedications.filter(med => med.drugId === drug2.id).map(med => med.familyMember.name);
+          
+          interactions.push({
+            severity: 'high',
+            drug1: drug1.name,
+            drug2: drug2.name,
+            description: `Family interaction: ${drug1.name} and ${drug2.name}`,
+            affectedMembers: [...new Set([...members1, ...members2])],
+            recommendation: 'Review medications with healthcare provider'
+          });
+        }
+      }
+    }
+    
+    res.json(createResponse(true, { 
+      interactions, 
+      totalMedications: allMedications.length,
+      uniqueDrugs: uniqueDrugIds.length,
+      familyMembers: [...new Set(allMedications.map(med => med.familyMember.name))]
+    }, 'Family interaction check completed'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Emergency information endpoint
+app.get('/api/emergency/:memberId', async (req, res, next) => {
+  try {
+    const { memberId } = req.params;
+    
+    const member = await prisma.familyMember.findUnique({
+      where: { id: parseInt(memberId) },
+      include: {
+        medications: {
+          where: { isActive: true },
+          include: { drug: true }
+        }
+      }
+    });
+    
+    if (!member) {
+      return res.status(404).json(createResponse(false, null, 'Family member not found'));
+    }
+    
+    const emergencyInfo = {
+      name: member.name,
+      age: member.age,
+      allergies: member.allergies ? JSON.parse(member.allergies) : [],
+      conditions: member.conditions ? JSON.parse(member.conditions) : [],
+      emergencyContact: member.emergencyContact,
+      emergencyPhone: member.emergencyPhone,
+      criticalMedications: member.medications.map(med => ({
+        name: med.drug.name,
+        dosage: med.dosage,
+        frequency: med.frequency
+      }))
+    };
+    
+    res.json(createResponse(true, emergencyInfo, 'Emergency information retrieved'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Enhanced drug search endpoint
+app.get('/api/drugs/search', async (req, res, next) => {
+  try {
+    const { query, category, manufacturer, limit = 50 } = req.query;
+    
+    let searchConditions = {};
+    
+    if (query) {
+      searchConditions.OR = [
+        { name: { contains: query } },
+        { combination: { contains: query } },
+        { manufacturer: { contains: query } }
+      ];
+    }
+    
+    if (category) {
+      searchConditions.category = { contains: category };
+    }
+    
+    if (manufacturer) {
+      searchConditions.manufacturer = { contains: manufacturer };
+    }
+    
+    const drugs = await prisma.drug.findMany({
+      where: searchConditions,
+      take: parseInt(limit),
+      orderBy: { name: 'asc' }
+    });
+    
+    logger.logSearch('drugs', query || 'all', drugs.length);
+    res.json(createResponse(true, drugs, 'Drugs retrieved successfully'));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Serve React app for any non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));

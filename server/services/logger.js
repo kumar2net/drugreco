@@ -150,6 +150,18 @@ class Logger {
     }
   }
 
+  // Search logging
+  logSearch(type, query, resultCount) {
+    const searchData = {
+      type,
+      query,
+      resultCount,
+      timestamp: this.getTimestamp()
+    };
+    
+    this.info(`Search performed: ${type}`, searchData);
+  }
+
   // Security logging
   logSecurity(event, details = null) {
     const securityData = {
