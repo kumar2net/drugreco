@@ -43,7 +43,7 @@ This MVP transforms a basic drug suggestion app into a complete family-centered 
 
 ### Backend
 - **Node.js + Express**: RESTful API server
-- **SQLite + Prisma**: Database with ORM for data management
+- **PostgreSQL + Prisma**: Database with ORM for data management
 - **Security**: Helmet, CORS, rate limiting
 - **Logging**: Comprehensive request and error logging
 
@@ -103,7 +103,13 @@ Drug {
    node seed.js  # Populate with sample drug data
    ```
 
-4. **Start the application**
+4. **Environment Setup**
+   ```bash
+   # Ensure only server/.env exists (remove root .env if present)
+   # This prevents Prisma Studio conflicts
+   ```
+
+5. **Start the application**
    ```bash
    # Terminal 1 - Backend
    cd server && npm start
@@ -112,9 +118,10 @@ Drug {
    cd client && npm start
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
+   - Backend API: http://localhost:3001
+   - Prisma Studio: `npx prisma studio --schema=server/prisma/schema.prisma`
 
 ## 📋 API Endpoints
 

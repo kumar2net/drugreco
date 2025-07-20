@@ -9,7 +9,7 @@ Your Family Drug Management System MVP is **FULLY IMPLEMENTED** and ready for us
 ### 1. Complete Full-Stack Application
 - **Backend API**: Node.js + Express with 10+ endpoints
 - **Frontend UI**: React application with modern responsive design
-- **Database**: SQLite with Prisma ORM for data management
+- **Database**: PostgreSQL with Prisma ORM for data management
 - **Testing**: Comprehensive API testing suite
 
 ### 2. Core Features Implemented
@@ -83,10 +83,11 @@ Your Family Drug Management System MVP is **FULLY IMPLEMENTED** and ready for us
 
 ### Database Testing: 100% Success ✅
 - ✅ Database connection working
-- ✅ 33 drugs loaded successfully
+- ✅ 39 drugs loaded successfully (including Dytor Plus, Sacurise)
 - ✅ Family member operations working
 - ✅ Medication tracking functional
 - ✅ Emergency data retrieval working
+- ✅ Environment variable conflicts resolved
 
 ## 🎨 UI/UX Implementation
 
@@ -186,7 +187,13 @@ Your Family Drug Management System MVP is **FULLY IMPLEMENTED** and ready for us
 
 ## 🎉 Next Steps for Your Family
 
-1. **Start the Application**:
+1. **Environment Setup** (Important):
+   ```bash
+   # Ensure only server/.env exists (remove root .env if present)
+   # This prevents Prisma Studio conflicts
+   ```
+
+2. **Start the Application**:
    ```bash
    # Terminal 1
    cd server && npm start
@@ -195,8 +202,10 @@ Your Family Drug Management System MVP is **FULLY IMPLEMENTED** and ready for us
    cd client && npm start
    ```
 
-2. **Access the System**:
-   - Open http://localhost:3000 in your browser
+3. **Access the System**:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001
+   - Prisma Studio: `npx prisma studio --schema=server/prisma/schema.prisma`
    - Start adding your family members
    - Begin tracking medications
 
